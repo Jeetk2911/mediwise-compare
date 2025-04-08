@@ -22,3 +22,20 @@ export interface SearchOptions {
   filters?: FilterOptions;
   sort?: string;
 }
+
+export interface BrandAvailability {
+  brand: string;
+  price: number;
+  available: boolean;
+  url?: string;
+}
+
+export interface MedicineComparison {
+  id: string;
+  name: string;
+  composition: string;
+  price: number;
+  manufacturer: string;
+  dosage: string;
+  brandAvailability: BrandAvailability[];
+}

@@ -11,7 +11,7 @@ export type Database = {
     Tables: {
       medicines: {
         Row: {
-          id: number
+          id: number | null
           manufacturer: string | null
           med_id: number
           name: string
@@ -20,7 +20,7 @@ export type Database = {
           short_composition2: string | null
         }
         Insert: {
-          id: number
+          id?: number | null
           manufacturer?: string | null
           med_id?: number
           name: string
@@ -29,7 +29,7 @@ export type Database = {
           short_composition2?: string | null
         }
         Update: {
-          id?: number
+          id?: number | null
           manufacturer?: string | null
           med_id?: number
           name?: string

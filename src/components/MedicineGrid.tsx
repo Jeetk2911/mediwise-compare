@@ -1,6 +1,7 @@
 
 import React from "react";
-import MedicineCard, { Medicine } from "./MedicineCard";
+import MedicineCard from "./MedicineCard";
+import { Medicine } from "../types/medicine";
 import { ArrowDownAZ, ArrowUpAZ, ArrowDownNarrowWide, ArrowUpWideNarrow } from "lucide-react";
 
 interface MedicineGridProps {
@@ -8,13 +9,17 @@ interface MedicineGridProps {
   loading?: boolean;
   onSort: (type: string) => void;
   currentSort?: string;
+  onCompare: (medicine: Medicine) => void;
+  comparedMedicines: Medicine[];
 }
 
 const MedicineGrid: React.FC<MedicineGridProps> = ({ 
   medicines, 
   loading = false, 
   onSort,
-  currentSort = ''
+  currentSort = '',
+  onCompare,
+  comparedMedicines = []
 }) => {
   const sortOptions = [
     { id: 'name-asc', label: 'Name A-Z', icon: <ArrowDownAZ className="h-4 w-4" /> },
@@ -22,6 +27,11 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
     { id: 'price-asc', label: 'Price Low-High', icon: <ArrowDownNarrowWide className="h-4 w-4" /> },
     { id: 'price-desc', label: 'Price High-Low', icon: <ArrowUpWideNarrow className="h-4 w-4" /> },
   ];
+
+  // Check if a medicine is already in the comparison list
+  const isCompared = (medicine: Medicine) => {
+    return comparedMedicines.some(m => m.id === medicine.id);
+  };
 
   return (
     <div>
@@ -54,7 +64,12 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
         {medicines.map((medicine) => (
-          <MedicineCard key={medicine.id} medicine={medicine} />
+          <MedicineCard 
+            key={medicine.id} 
+            medicine={medicine} 
+            onCompare={onCompare}
+            isCompared={isCompared(medicine)}
+          />
         ))}
       </div>
     </div>
