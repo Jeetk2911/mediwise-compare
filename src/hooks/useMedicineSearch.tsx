@@ -1,25 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { Medicine } from "../components/MedicineCard";
-import { FilterOptions } from "../components/FilterBar";
+import { Medicine, FilterOptions, SearchOptions } from "../types/medicine";
+import { mapSupabaseMedicine } from "../utils/medicineMappers";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-// Mapping function to convert Supabase data to Medicine type
-const mapSupabaseMedicine = (item: any): Medicine => ({
-  id: item.med_id.toString(),
-  name: item.name || 'Unknown Medicine',
-  composition: item.short_composition1 + (item.short_composition2 ? `, ${item.short_composition2}` : ''),
-  price: item['price(₹)'] || 0,
-  manufacturer: item.manufacturer || 'Unknown Manufacturer',
-  dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
-});
-
-interface SearchOptions {
-  query?: string;
-  filters?: FilterOptions;
-  sort?: string;
-}
 
 export const useMedicineSearch = () => {
   const [searchResults, setSearchResults] = useState<Medicine[]>([]);
@@ -132,22 +116,7 @@ export const useMedicineSearch = () => {
         
         // Apply sorting in memory
         if (sort) {
-          switch (sort) {
-            case 'name-asc':
-              results.sort((a, b) => a.name.localeCompare(b.name));
-              break;
-            case 'name-desc':
-              results.sort((a, b) => b.name.localeCompare(a.name));
-              break;
-            case 'price-asc':
-              results.sort((a, b) => a.price - b.price);
-              break;
-            case 'price-desc':
-              results.sort((a, b) => b.price - a.price);
-              break;
-            default:
-              break;
-          }
+          results = applySorting(results, sort);
         }
         
         setSearchResults(results);
@@ -191,4 +160,28 @@ export const useMedicineSearch = () => {
     updateFilters,
     updateSort
   };
+};
+
+// Helper function for sorting medicines
+const applySorting = (medicines: Medicine[], sort: string): Medicine[] => {
+  const sortedMedicines = [...medicines]; // Create a copy to avoid mutating the original array
+  
+  switch (sort) {
+    case 'name-asc':
+      sortedMedicines.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'name-desc':
+      sortedMedicines.sort((a, b) => b.name.localeCompare(a.name));
+      break;
+    case 'price-asc':
+      sortedMedicines.sort((a, b) => a.price - b.price);
+      break;
+    case 'price-desc':
+      sortedMedicines.sort((a, b) => b.price - a.price);
+      break;
+    default:
+      break;
+  }
+  
+  return sortedMedicines;
 };

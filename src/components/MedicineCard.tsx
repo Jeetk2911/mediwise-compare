@@ -1,16 +1,6 @@
-
 import React from "react";
 import { Pill, Shield, DollarSign, Info } from "lucide-react";
-
-export interface Medicine {
-  id: string;
-  name: string;
-  composition: string;
-  price: number;
-  manufacturer: string;
-  dosage: string;
-  image?: string;
-}
+import { Medicine } from "../types/medicine";
 
 interface MedicineCardProps {
   medicine: Medicine;
