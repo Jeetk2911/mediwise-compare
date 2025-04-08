@@ -33,11 +33,15 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
     return comparedMedicines.some(m => m.id === medicine.id);
   };
 
+  const resultsText = medicines.length === 0 
+    ? "No matches found" 
+    : `Results (${medicines.length})`;
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">
-          {loading ? 'Searching...' : `Results (${medicines.length})`}
+          {loading ? 'Searching...' : resultsText}
         </h2>
         <div className="flex gap-2">
           <label className="text-sm font-medium mr-2 hidden sm:inline-block">Sort by:</label>

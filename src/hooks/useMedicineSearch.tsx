@@ -5,6 +5,72 @@ import { mapSupabaseMedicine } from "../utils/medicineMappers";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+// Sample data to use when no medicines are returned from the database
+const sampleMedicines: Medicine[] = [
+  {
+    id: "sample1",
+    name: "Paracetamol 500mg",
+    composition: "Paracetamol",
+    price: 50,
+    manufacturer: "GSK Pharma",
+    dosage: "As directed by physician"
+  },
+  {
+    id: "sample2",
+    name: "Ibuprofen 400mg",
+    composition: "Ibuprofen",
+    price: 65.5,
+    manufacturer: "Sun Pharmaceuticals",
+    dosage: "As directed by physician"
+  },
+  {
+    id: "sample3",
+    name: "Amoxicillin 250mg",
+    composition: "Amoxicillin",
+    price: 120.75,
+    manufacturer: "Cipla Ltd",
+    dosage: "As directed by physician"
+  },
+  {
+    id: "sample4",
+    name: "Azithromycin 500mg",
+    composition: "Azithromycin",
+    price: 180.25,
+    manufacturer: "Mankind Pharma",
+    dosage: "As directed by physician"
+  },
+  {
+    id: "sample5",
+    name: "Cetirizine 10mg",
+    composition: "Cetirizine Hydrochloride",
+    price: 35.5,
+    manufacturer: "Dr Reddy's Laboratories",
+    dosage: "As directed by physician"
+  },
+  {
+    id: "sample6",
+    name: "Montelukast 10mg",
+    composition: "Montelukast Sodium",
+    price: 145.8,
+    manufacturer: "Lupin Limited",
+    dosage: "As directed by physician"
+  }
+];
+
+// Helper function to extract unique values from an array of medicines
+const extractUniqueValues = (
+  medicines: Medicine[], 
+  key: keyof Medicine
+): string[] => {
+  return Array.from(
+    new Set(
+      medicines
+        .filter(med => med[key])
+        .map(med => med[key] as string)
+    )
+  );
+};
+
 export const useMedicineSearch = () => {
   const [searchResults, setSearchResults] = useState<Medicine[]>([]);
   const [allMedicines, setAllMedicines] = useState<Medicine[]>([]);
@@ -16,6 +82,7 @@ export const useMedicineSearch = () => {
     filters: {},
     sort: "name-asc"
   });
+  const [useDefaultData, setUseDefaultData] = useState(false);
 
   // Initial data fetch from Supabase
   useEffect(() => {
@@ -29,26 +96,39 @@ export const useMedicineSearch = () => {
         
         if (error) throw error;
         
-        if (data) {
+        if (data && data.length > 0) {
           const mappedData = data.map(mapSupabaseMedicine);
           setAllMedicines(mappedData);
           setSearchResults(mappedData);
           
           // Extract unique manufacturers
-          const uniqueManufacturers = Array.from(
-            new Set(mappedData.filter(med => med.manufacturer).map(med => med.manufacturer))
-          );
-          setManufacturers(uniqueManufacturers as string[]);
+          setManufacturers(extractUniqueValues(mappedData, 'manufacturer'));
           
           // Extract unique compositions
-          const uniqueCompositions = Array.from(
-            new Set(mappedData.filter(med => med.composition).map(med => med.composition))
-          );
-          setCompositions(uniqueCompositions);
+          setCompositions(extractUniqueValues(mappedData, 'composition'));
+          
+          setUseDefaultData(false);
+        } else {
+          // Use sample data if no data is returned from Supabase
+          setAllMedicines(sampleMedicines);
+          setSearchResults(sampleMedicines);
+          setManufacturers(extractUniqueValues(sampleMedicines, 'manufacturer'));
+          setCompositions(extractUniqueValues(sampleMedicines, 'composition'));
+          setUseDefaultData(true);
+          
+          toast.info("Using sample data for demonstration. No medicines found in database.");
         }
       } catch (error) {
         console.error("Error fetching medicines:", error);
-        toast.error("Failed to load medicines");
+        
+        // Use sample data if there's an error
+        setAllMedicines(sampleMedicines);
+        setSearchResults(sampleMedicines);
+        setManufacturers(extractUniqueValues(sampleMedicines, 'manufacturer'));
+        setCompositions(extractUniqueValues(sampleMedicines, 'composition'));
+        setUseDefaultData(true);
+        
+        toast.error("Failed to load medicines from database. Using sample data.");
       } finally {
         setLoading(false);
       }
@@ -64,6 +144,53 @@ export const useMedicineSearch = () => {
       try {
         const { query, filters, sort } = searchOptions;
         
+        // If using default data, perform in-memory search and filtering
+        if (useDefaultData) {
+          let results = [...sampleMedicines];
+          
+          // Apply text search if query exists
+          if (query && query.trim() !== "") {
+            const searchTerm = query.toLowerCase();
+            results = results.filter(med => 
+              med.name.toLowerCase().includes(searchTerm) || 
+              med.composition.toLowerCase().includes(searchTerm) || 
+              med.manufacturer.toLowerCase().includes(searchTerm)
+            );
+          }
+          
+          // Apply filters if they exist
+          if (filters) {
+            // For composition filter
+            if (filters.composition) {
+              results = results.filter(med => med.composition === filters.composition);
+            }
+            
+            // For manufacturer filter
+            if (filters.manufacturer) {
+              results = results.filter(med => med.manufacturer === filters.manufacturer);
+            }
+            
+            // For price range filter
+            if (filters.priceRange) {
+              const { min, max } = filters.priceRange;
+              if (min !== undefined) {
+                results = results.filter(med => med.price >= min);
+              }
+              if (max !== undefined) {
+                results = results.filter(med => med.price <= max);
+              }
+            }
+          }
+          
+          // Apply sorting
+          if (sort) {
+            results = applySorting(results, sort);
+          }
+          
+          setSearchResults(results);
+          return;
+        }
+        
         // Start building the Supabase query
         let supabaseQuery = supabase.from('medicines').select('*');
         
@@ -77,9 +204,6 @@ export const useMedicineSearch = () => {
         
         // Apply filters if they exist
         if (filters) {
-          // Since composition in our app is mapped from short_composition1 + short_composition2
-          // We need to handle this filter differently in the frontend
-          
           // For manufacturer filter
           if (filters.manufacturer) {
             supabaseQuery = supabaseQuery.eq('manufacturer', filters.manufacturer);
@@ -102,8 +226,11 @@ export const useMedicineSearch = () => {
         
         if (error) throw error;
         
-        if (!data) {
-          data = [];
+        if (!data || data.length === 0) {
+          // Use sample data instead if no results from database
+          setSearchResults(sampleMedicines);
+          toast.info("Using sample data. No medicines found in database matching your criteria.");
+          return;
         }
         
         // Map the data to our Medicine type
@@ -126,6 +253,9 @@ export const useMedicineSearch = () => {
       } catch (error) {
         console.error("Search error:", error);
         toast.error("Error searching medicines");
+        
+        // Fallback to sample data
+        setSearchResults(sampleMedicines);
       } finally {
         setLoading(false);
       }
@@ -136,7 +266,7 @@ export const useMedicineSearch = () => {
         (searchOptions.filters && Object.keys(searchOptions.filters).length > 0)) {
       searchMedicines();
     }
-  }, [searchOptions, allMedicines.length]);
+  }, [searchOptions, allMedicines.length, useDefaultData]);
 
   const updateSearchQuery = (query: string) => {
     setSearchOptions(prev => ({ ...prev, query }));
