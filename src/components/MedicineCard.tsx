@@ -1,8 +1,12 @@
 
 import React, { useState } from "react";
-import { Pill, Shield, DollarSign, Info, ExternalLink, Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { 
+  Pill, Shield, BadgeIndianRupee, Info, ExternalLink, 
+  ChevronDown, ChevronUp, ImageIcon, FileText 
+} from "lucide-react";
 import { Medicine } from "../types/medicine";
 import { getMedicineAvailability } from "../utils/medicineMappers";
+import { Card, CardContent } from "./ui/card";
 
 interface MedicineCardProps {
   medicine: Medicine;
@@ -18,10 +22,20 @@ const MedicineCard: React.FC<MedicineCardProps> = ({
   isCompared = false
 }) => {
   const [showAvailability, setShowAvailability] = useState(false);
+  const [showDescription, setShowDescription] = useState(false);
+  const [showSideEffects, setShowSideEffects] = useState(false);
   const availability = getMedicineAvailability(medicine);
   
   const toggleAvailability = () => {
     setShowAvailability(prev => !prev);
+  };
+
+  const toggleDescription = () => {
+    setShowDescription(prev => !prev);
+  };
+
+  const toggleSideEffects = () => {
+    setShowSideEffects(prev => !prev);
   };
   
   return (
@@ -32,11 +46,35 @@ const MedicineCard: React.FC<MedicineCardProps> = ({
         ${isCompared ? "border-2 border-medblue-500 shadow-md" : ""}
       `}
     >
+      <div className="relative">
+        {medicine.image ? (
+          <img 
+            src={medicine.image} 
+            alt={medicine.name} 
+            className="w-full h-40 object-cover"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "https://via.placeholder.com/300x150?text=Medicine+Image";
+            }}
+          />
+        ) : (
+          <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+            <ImageIcon className="h-12 w-12 text-gray-400" />
+          </div>
+        )}
+        {isAlternative && (
+          <div className="absolute top-2 right-2 bg-medcyan-500 text-white text-xs px-2 py-1 rounded-full">
+            Alternative
+          </div>
+        )}
+      </div>
+      
       <div className="p-5">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-lg font-bold tracking-tight">{medicine.name}</h3>
-          <span className="pill bg-medblue-50 text-medblue-700">
-            ${medicine.price.toFixed(2)}
+          <span className="pill bg-medblue-50 text-medblue-700 flex items-center gap-1">
+            <BadgeIndianRupee className="h-3 w-3" />
+            {medicine.price.toFixed(2)}
           </span>
         </div>
         
@@ -56,7 +94,7 @@ const MedicineCard: React.FC<MedicineCardProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-medcyan-500" />
+            <BadgeIndianRupee className="h-4 w-4 text-medcyan-500" />
             <p className="text-sm text-gray-700">
               <span className="font-medium">Dosage:</span> {medicine.dosage}
             </p>
@@ -64,7 +102,48 @@ const MedicineCard: React.FC<MedicineCardProps> = ({
         </div>
       </div>
       
-      <div className="bg-gray-50 px-5 py-3">
+      {/* Description toggle */}
+      <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+        <button 
+          onClick={toggleDescription} 
+          className="flex justify-between items-center w-full text-sm text-medblue-600 font-medium"
+        >
+          <span className="flex items-center gap-2">
+            <FileText className="h-3.5 w-3.5" />
+            {showDescription ? 'Hide description' : 'Show description'}
+          </span>
+          {showDescription ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        
+        {showDescription && (
+          <div className="mt-3 animate-fade-in">
+            <p className="text-sm text-gray-600">{medicine.description}</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Side Effects toggle */}
+      <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+        <button 
+          onClick={toggleSideEffects} 
+          className="flex justify-between items-center w-full text-sm text-medblue-600 font-medium"
+        >
+          <span className="flex items-center gap-2">
+            <Info className="h-3.5 w-3.5" />
+            {showSideEffects ? 'Hide side effects' : 'Show side effects'}
+          </span>
+          {showSideEffects ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        
+        {showSideEffects && (
+          <div className="mt-3 animate-fade-in">
+            <p className="text-sm text-gray-600">{medicine.sideEffects}</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Availability toggle */}
+      <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
         <button 
           onClick={toggleAvailability} 
           className="flex justify-between items-center w-full text-sm text-medblue-600 font-medium"
@@ -86,7 +165,10 @@ const MedicineCard: React.FC<MedicineCardProps> = ({
                   <span className="text-sm font-medium">{item.brand}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium">₹{item.price.toFixed(2)}</span>
+                  <span className="text-sm font-medium flex items-center">
+                    <BadgeIndianRupee className="h-3 w-3 mr-0.5" />
+                    {item.price.toFixed(2)}
+                  </span>
                   <a 
                     href={item.url} 
                     target="_blank" 

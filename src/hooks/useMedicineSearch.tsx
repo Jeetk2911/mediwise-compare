@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Medicine, FilterOptions, SearchOptions } from "../types/medicine";
-import { mapSupabaseMedicine } from "../utils/medicineMappers";
+import { mapSupabaseMedicine, findAlternativeMedicines } from "../utils/medicineMappers";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +13,11 @@ const sampleMedicines: Medicine[] = [
     composition: "Paracetamol",
     price: 50,
     manufacturer: "GSK Pharma",
-    dosage: "As directed by physician"
+    dosage: "As directed by physician",
+    image: "/images/medicine-1.jpg",
+    description: "Paracetamol 500mg is commonly used to treat pain and fever in adults and children.",
+    sideEffects: "Side effects are rare but may include nausea, rash, or liver problems with prolonged use.",
+    popularity: 95
   },
   {
     id: "sample2",
@@ -21,7 +25,11 @@ const sampleMedicines: Medicine[] = [
     composition: "Ibuprofen",
     price: 65.5,
     manufacturer: "Sun Pharmaceuticals",
-    dosage: "As directed by physician"
+    dosage: "As directed by physician",
+    image: "/images/medicine-2.jpg",
+    description: "Ibuprofen 400mg is a nonsteroidal anti-inflammatory drug (NSAID) used to relieve pain, reduce inflammation, and lower fever.",
+    sideEffects: "May cause stomach pain, heartburn, nausea, headache, or dizziness.",
+    popularity: 88
   },
   {
     id: "sample3",
@@ -29,7 +37,11 @@ const sampleMedicines: Medicine[] = [
     composition: "Amoxicillin",
     price: 120.75,
     manufacturer: "Cipla Ltd",
-    dosage: "As directed by physician"
+    dosage: "As directed by physician",
+    image: "/images/medicine-3.jpg",
+    description: "Amoxicillin 250mg is an antibiotic used to treat various bacterial infections.",
+    sideEffects: "May cause diarrhea, stomach upset, or allergic reactions.",
+    popularity: 85
   },
   {
     id: "sample4",
@@ -37,7 +49,11 @@ const sampleMedicines: Medicine[] = [
     composition: "Azithromycin",
     price: 180.25,
     manufacturer: "Mankind Pharma",
-    dosage: "As directed by physician"
+    dosage: "As directed by physician",
+    image: "/images/medicine-4.jpg",
+    description: "Azithromycin 500mg is an antibiotic used to treat various bacterial infections including respiratory infections.",
+    sideEffects: "May cause diarrhea, nausea, abdominal pain, or vomiting.",
+    popularity: 82
   },
   {
     id: "sample5",
@@ -45,7 +61,11 @@ const sampleMedicines: Medicine[] = [
     composition: "Cetirizine Hydrochloride",
     price: 35.5,
     manufacturer: "Dr Reddy's Laboratories",
-    dosage: "As directed by physician"
+    dosage: "As directed by physician",
+    image: "/images/medicine-5.jpg",
+    description: "Cetirizine 10mg is an antihistamine used to relieve allergy symptoms such as watery eyes, runny nose, itching, and sneezing.",
+    sideEffects: "May cause drowsiness, dry mouth, or headache.",
+    popularity: 79
   },
   {
     id: "sample6",
@@ -53,7 +73,11 @@ const sampleMedicines: Medicine[] = [
     composition: "Montelukast Sodium",
     price: 145.8,
     manufacturer: "Lupin Limited",
-    dosage: "As directed by physician"
+    dosage: "As directed by physician",
+    image: "/images/medicine-1.jpg",
+    description: "Montelukast 10mg is used to prevent and treat symptoms of asthma and allergies.",
+    sideEffects: "May cause headache, stomach pain, or in rare cases, mood changes.",
+    popularity: 76
   }
 ];
 
@@ -83,6 +107,8 @@ export const useMedicineSearch = () => {
     sort: "name-asc"
   });
   const [useDefaultData, setUseDefaultData] = useState(false);
+  const [focusedMedicine, setFocusedMedicine] = useState<Medicine | null>(null);
+  const [alternatives, setAlternatives] = useState<Medicine[]>([]);
 
   // Initial data fetch from Supabase
   useEffect(() => {
@@ -92,7 +118,7 @@ export const useMedicineSearch = () => {
         const { data, error } = await supabase
           .from('medicines')
           .select('*')
-          .limit(100); // Limiting to 100 results for initial load performance
+          .limit(500); // Increased limit to get more compositions/manufacturers
         
         if (error) throw error;
         
@@ -101,10 +127,10 @@ export const useMedicineSearch = () => {
           setAllMedicines(mappedData);
           setSearchResults(mappedData);
           
-          // Extract unique manufacturers
+          // Extract unique manufacturers - get all of them
           setManufacturers(extractUniqueValues(mappedData, 'manufacturer'));
           
-          // Extract unique compositions
+          // Extract unique compositions - get all of them
           setCompositions(extractUniqueValues(mappedData, 'composition'));
           
           setUseDefaultData(false);
@@ -156,6 +182,20 @@ export const useMedicineSearch = () => {
               med.composition.toLowerCase().includes(searchTerm) || 
               med.manufacturer.toLowerCase().includes(searchTerm)
             );
+            
+            // Set the focused medicine as the first result if we have a query
+            if (results.length > 0) {
+              setFocusedMedicine(results[0]);
+              // Find alternatives for the focused medicine
+              const medicineAlternatives = findAlternativeMedicines(results[0], sampleMedicines);
+              setAlternatives(medicineAlternatives);
+            } else {
+              setFocusedMedicine(null);
+              setAlternatives([]);
+            }
+          } else {
+            setFocusedMedicine(null);
+            setAlternatives([]);
           }
           
           // Apply filters if they exist
@@ -222,7 +262,7 @@ export const useMedicineSearch = () => {
         }
         
         // Execute the query
-        let { data, error } = await supabaseQuery;
+        let { data, error } = await supabaseQuery.limit(500);
         
         if (error) throw error;
         
@@ -244,6 +284,17 @@ export const useMedicineSearch = () => {
         // Apply sorting in memory
         if (sort) {
           results = applySorting(results, sort);
+        }
+        
+        // Set focused medicine and alternatives if there's a query
+        if (query && query.trim() !== "" && results.length > 0) {
+          setFocusedMedicine(results[0]);
+          // Find alternatives for the focused medicine
+          const medicineAlternatives = findAlternativeMedicines(results[0], allMedicines);
+          setAlternatives(medicineAlternatives);
+        } else {
+          setFocusedMedicine(null);
+          setAlternatives([]);
         }
         
         setSearchResults(results);
@@ -286,6 +337,8 @@ export const useMedicineSearch = () => {
     manufacturers,
     compositions,
     searchOptions,
+    focusedMedicine,
+    alternatives,
     updateSearchQuery,
     updateFilters,
     updateSort

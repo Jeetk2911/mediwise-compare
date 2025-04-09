@@ -18,6 +18,8 @@ const Index = () => {
     manufacturers,
     compositions,
     searchOptions,
+    focusedMedicine,
+    alternatives,
     updateSearchQuery,
     updateFilters,
     updateSort
@@ -117,7 +119,9 @@ const Index = () => {
             <SkeletonGrid />
           ) : medicines.length > 0 ? (
             <MedicineGrid 
-              medicines={medicines} 
+              medicines={medicines}
+              alternatives={alternatives}
+              focusedMedicine={focusedMedicine}
               onSort={updateSort} 
               currentSort={searchOptions.sort}
               onCompare={handleCompare}

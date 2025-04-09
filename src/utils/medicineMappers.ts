@@ -11,6 +11,11 @@ export const mapSupabaseMedicine = (item: SupabaseMedicine): Medicine => ({
   price: item['price(₹)'] || 0,
   manufacturer: item.manufacturer || 'Unknown Manufacturer',
   dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
+  // Added mock data for new fields
+  image: `/images/medicine-${Math.floor(Math.random() * 5) + 1}.jpg`, // Mock images
+  description: `${item.name} contains ${item.short_composition1}${item.short_composition2 ? ` and ${item.short_composition2}` : ''} and is commonly prescribed for various conditions.`,
+  sideEffects: "Common side effects may include nausea, headache, dizziness, or stomach upset. Please consult your doctor for complete information.",
+  popularity: Math.floor(Math.random() * 100), // Mock popularity score for alternatives
 });
 
 export const getMedicineAvailability = (medicine: Medicine): BrandAvailability[] => {
@@ -52,4 +57,25 @@ export const getMedicineAvailability = (medicine: Medicine): BrandAvailability[]
       url: `https://www.medplusmart.com/searchProduct?productName=${encodeURIComponent(medicine.name)}`
     }
   ];
+};
+
+// New function to find alternative medicines based on composition
+export const findAlternativeMedicines = (
+  medicine: Medicine,
+  allMedicines: Medicine[]
+): Medicine[] => {
+  if (!medicine || !allMedicines.length) return [];
+  
+  // Filter medicines with the same composition but different from the current medicine
+  const sameComposition = allMedicines.filter(
+    m => m.composition === medicine.composition && m.id !== medicine.id
+  );
+  
+  // Sort by popularity (descending)
+  const sortedAlternatives = sameComposition.sort((a, b) => 
+    (b.popularity || 0) - (a.popularity || 0)
+  );
+  
+  // Return top 5 alternatives
+  return sortedAlternatives.slice(0, 5);
 };
