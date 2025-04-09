@@ -83,13 +83,13 @@ const Index = () => {
             Find Medicine Alternatives & Compare Prices
           </h1>
           <p className="text-md md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Search for medications by name, composition, or manufacturer and 
+            Search for medications by composition and 
             easily compare alternatives to find the best option for your needs.
           </p>
           
           <SearchBar 
             onSearch={updateSearchQuery} 
-            placeholder="Search by medicine name, composition, or manufacturer..." 
+            placeholder="Search by medicine composition..." 
           />
         </section>
         

@@ -6,7 +6,6 @@ export interface Medicine {
   price: number;
   manufacturer: string;
   dosage: string;
-  image?: string;
   description?: string;
   sideEffects?: string;
   popularity?: number; // For determining popular alternatives

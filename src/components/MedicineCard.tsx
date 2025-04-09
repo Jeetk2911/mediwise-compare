@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { 
   Pill, Shield, BadgeIndianRupee, Info, ExternalLink, 
-  ChevronDown, ChevronUp, ImageIcon, FileText 
+  ChevronDown, ChevronUp, FileText 
 } from "lucide-react";
 import { Medicine } from "../types/medicine";
 import { getMedicineAvailability } from "../utils/medicineMappers";
@@ -46,29 +46,6 @@ const MedicineCard: React.FC<MedicineCardProps> = ({
         ${isCompared ? "border-2 border-medblue-500 shadow-md" : ""}
       `}
     >
-      <div className="relative">
-        {medicine.image ? (
-          <img 
-            src={medicine.image} 
-            alt={medicine.name} 
-            className="w-full h-40 object-cover"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = "https://via.placeholder.com/300x150?text=Medicine+Image";
-            }}
-          />
-        ) : (
-          <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
-            <ImageIcon className="h-12 w-12 text-gray-400" />
-          </div>
-        )}
-        {isAlternative && (
-          <div className="absolute top-2 right-2 bg-medcyan-500 text-white text-xs px-2 py-1 rounded-full">
-            Alternative
-          </div>
-        )}
-      </div>
-      
       <div className="p-5">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-lg font-bold tracking-tight">{medicine.name}</h3>

@@ -12,7 +12,6 @@ export const mapSupabaseMedicine = (item: SupabaseMedicine): Medicine => ({
   manufacturer: item.manufacturer || 'Unknown Manufacturer',
   dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
   // Added mock data for new fields
-  image: `/images/medicine-${Math.floor(Math.random() * 5) + 1}.jpg`, // Mock images
   description: `${item.name} contains ${item.short_composition1}${item.short_composition2 ? ` and ${item.short_composition2}` : ''} and is commonly prescribed for various conditions.`,
   sideEffects: "Common side effects may include nausea, headache, dizziness, or stomach upset. Please consult your doctor for complete information.",
   popularity: Math.floor(Math.random() * 100), // Mock popularity score for alternatives
@@ -59,22 +58,30 @@ export const getMedicineAvailability = (medicine: Medicine): BrandAvailability[]
   ];
 };
 
-// New function to find alternative medicines based on composition
+// Updated function to find alternative medicines based on the Python algorithm
 export const findAlternativeMedicines = (
   medicine: Medicine,
   allMedicines: Medicine[]
 ): Medicine[] => {
   if (!medicine || !allMedicines.length) return [];
   
-  // Filter medicines with the same composition but different from the current medicine
-  const sameComposition = allMedicines.filter(
-    m => m.composition === medicine.composition && m.id !== medicine.id
-  );
+  // Get the composition parts (might be multiple ingredients)
+  const compositionParts = medicine.composition.split(', ');
   
-  // Sort by popularity (descending)
-  const sortedAlternatives = sameComposition.sort((a, b) => 
-    (b.popularity || 0) - (a.popularity || 0)
-  );
+  // Filter medicines with any matching composition part but different from the current medicine
+  const sameComposition = allMedicines.filter(m => {
+    // Skip the original medicine
+    if (m.id === medicine.id) return false;
+    
+    // Check if any part of the composition matches
+    const mCompositionParts = m.composition.split(', ');
+    return compositionParts.some(comp => 
+      mCompositionParts.some(mComp => mComp === comp)
+    );
+  });
+  
+  // Sort by price in descending order (as specified in the Python code)
+  const sortedAlternatives = sameComposition.sort((a, b) => b.price - a.price);
   
   // Return top 5 alternatives
   return sortedAlternatives.slice(0, 5);

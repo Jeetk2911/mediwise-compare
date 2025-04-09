@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Medicine, FilterOptions, SearchOptions } from "../types/medicine";
 import { mapSupabaseMedicine, findAlternativeMedicines } from "../utils/medicineMappers";
@@ -14,7 +13,6 @@ const sampleMedicines: Medicine[] = [
     price: 50,
     manufacturer: "GSK Pharma",
     dosage: "As directed by physician",
-    image: "/images/medicine-1.jpg",
     description: "Paracetamol 500mg is commonly used to treat pain and fever in adults and children.",
     sideEffects: "Side effects are rare but may include nausea, rash, or liver problems with prolonged use.",
     popularity: 95
@@ -118,7 +116,7 @@ export const useMedicineSearch = () => {
         const { data, error } = await supabase
           .from('medicines')
           .select('*')
-          .limit(500); // Increased limit to get more compositions/manufacturers
+          .limit(1000); // Increased limit to get more compositions/manufacturers
         
         if (error) throw error;
         
@@ -174,13 +172,11 @@ export const useMedicineSearch = () => {
         if (useDefaultData) {
           let results = [...sampleMedicines];
           
-          // Apply text search if query exists
+          // Apply text search if query exists - now focusing on composition
           if (query && query.trim() !== "") {
             const searchTerm = query.toLowerCase();
             results = results.filter(med => 
-              med.name.toLowerCase().includes(searchTerm) || 
-              med.composition.toLowerCase().includes(searchTerm) || 
-              med.manufacturer.toLowerCase().includes(searchTerm)
+              med.composition.toLowerCase().includes(searchTerm)
             );
             
             // Set the focused medicine as the first result if we have a query
@@ -234,11 +230,11 @@ export const useMedicineSearch = () => {
         // Start building the Supabase query
         let supabaseQuery = supabase.from('medicines').select('*');
         
-        // Apply text search if query exists
+        // Apply text search if query exists - FOCUSING ON COMPOSITION
         if (query && query.trim() !== "") {
           const searchTerm = query.toLowerCase();
           supabaseQuery = supabaseQuery.or(
-            `name.ilike.%${searchTerm}%,short_composition1.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%`
+            `short_composition1.ilike.%${searchTerm}%,short_composition2.ilike.%${searchTerm}%`
           );
         }
         

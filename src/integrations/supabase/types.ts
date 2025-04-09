@@ -11,30 +11,30 @@ export type Database = {
     Tables: {
       medicines: {
         Row: {
-          id: number | null
+          id: number
           manufacturer: string | null
           med_id: number
           name: string
           "price(₹)": number | null
-          short_composition1: string
+          short_composition1: string | null
           short_composition2: string | null
         }
         Insert: {
-          id?: number | null
+          id: number
           manufacturer?: string | null
           med_id?: number
           name: string
           "price(₹)"?: number | null
-          short_composition1: string
+          short_composition1?: string | null
           short_composition2?: string | null
         }
         Update: {
-          id?: number | null
+          id?: number
           manufacturer?: string | null
           med_id?: number
           name?: string
           "price(₹)"?: number | null
-          short_composition1?: string
+          short_composition1?: string | null
           short_composition2?: string | null
         }
         Relationships: []
