@@ -1,29 +1,20 @@
 
 import React from "react";
-import MedicineCard from "./MedicineCard";
-import { Medicine } from "../types/medicine";
-import { ArrowDownAZ, ArrowUpAZ, ArrowDownNarrowWide, ArrowUpWideNarrow, AlertCircle } from "lucide-react";
+import MedicineCard, { Medicine } from "./MedicineCard";
+import { ArrowDownAZ, ArrowUpAZ, ArrowDownNarrowWide, ArrowUpWideNarrow } from "lucide-react";
 
 interface MedicineGridProps {
   medicines: Medicine[];
-  alternatives?: Medicine[];
-  focusedMedicine?: Medicine | null;
   loading?: boolean;
   onSort: (type: string) => void;
   currentSort?: string;
-  onCompare: (medicine: Medicine) => void;
-  comparedMedicines: Medicine[];
 }
 
 const MedicineGrid: React.FC<MedicineGridProps> = ({ 
   medicines, 
-  alternatives = [],
-  focusedMedicine = null,
   loading = false, 
   onSort,
-  currentSort = '',
-  onCompare,
-  comparedMedicines = []
+  currentSort = ''
 }) => {
   const sortOptions = [
     { id: 'name-asc', label: 'Name A-Z', icon: <ArrowDownAZ className="h-4 w-4" /> },
@@ -32,20 +23,11 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
     { id: 'price-desc', label: 'Price High-Low', icon: <ArrowUpWideNarrow className="h-4 w-4" /> },
   ];
 
-  // Check if a medicine is already in the comparison list
-  const isCompared = (medicine: Medicine) => {
-    return comparedMedicines.some(m => m.id === medicine.id);
-  };
-
-  const resultsText = medicines.length === 0 
-    ? "No matches found" 
-    : `Results (${medicines.length})`;
-
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">
-          {loading ? 'Searching...' : resultsText}
+          {loading ? 'Searching...' : `Results (${medicines.length})`}
         </h2>
         <div className="flex gap-2">
           <label className="text-sm font-medium mr-2 hidden sm:inline-block">Sort by:</label>
@@ -70,54 +52,9 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
         </div>
       </div>
       
-      {/* Data source indicator */}
-      {medicines.length > 0 && (
-        <div className="text-xs text-gray-500 mb-4 flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-          Using live database data - showing {medicines.length} results
-        </div>
-      )}
-      
-      {/* Show focused medicine and alternatives if they exist */}
-      {focusedMedicine && alternatives.length > 0 && (
-        <div className="mb-10">
-          <h2 className="text-xl font-bold mb-4">Your Medicine</h2>
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
-            <MedicineCard 
-              key={focusedMedicine.id} 
-              medicine={focusedMedicine} 
-              onCompare={onCompare}
-              isCompared={isCompared(focusedMedicine)}
-            />
-          </div>
-          
-          <h2 className="text-xl font-bold mb-4 border-t pt-8">Top Alternatives</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {alternatives.map((medicine) => (
-              <MedicineCard 
-                key={medicine.id} 
-                medicine={medicine}
-                isAlternative={true}
-                onCompare={onCompare}
-                isCompared={isCompared(medicine)}
-              />
-            ))}
-          </div>
-          
-          <div className="border-t pt-8 mb-4">
-            <h2 className="text-xl font-bold">All Medicines</h2>
-          </div>
-        </div>
-      )}
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
         {medicines.map((medicine) => (
-          <MedicineCard 
-            key={medicine.id} 
-            medicine={medicine} 
-            onCompare={onCompare}
-            isCompared={isCompared(medicine)}
-          />
+          <MedicineCard key={medicine.id} medicine={medicine} />
         ))}
       </div>
     </div>

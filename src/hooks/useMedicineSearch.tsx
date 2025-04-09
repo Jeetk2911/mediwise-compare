@@ -1,15 +1,87 @@
 
 import { useState, useEffect } from "react";
-import { Medicine, FilterOptions, SearchOptions } from "../types/medicine";
-import { findAlternativeMedicines } from "../utils/medicineMappers";
-import { extractUniqueValues, applySorting } from "../utils/medicineHelpers";
-import { fetchAllMedicines, searchMedicines } from "../services/medicineService";
+import { Medicine } from "../components/MedicineCard";
+import { FilterOptions } from "../components/FilterBar";
 import { toast } from "sonner";
+
+// Sample data for demo purposes
+const DEMO_MEDICINES: Medicine[] = [
+  {
+    id: "1",
+    name: "PainRelief Plus",
+    composition: "Paracetamol 500mg",
+    price: 5.99,
+    manufacturer: "MediPharm",
+    dosage: "1 tablet 3-4 times daily"
+  },
+  {
+    id: "2",
+    name: "ParaEase",
+    composition: "Paracetamol 500mg",
+    price: 4.50,
+    manufacturer: "HealthCare Labs",
+    dosage: "1-2 tablets every 6 hours"
+  },
+  {
+    id: "3",
+    name: "AlloCure",
+    composition: "Allopurinol 100mg",
+    price: 12.75,
+    manufacturer: "PharmaGlobal",
+    dosage: "1 tablet daily"
+  },
+  {
+    id: "4",
+    name: "ZantiAcid",
+    composition: "Ranitidine 150mg",
+    price: 8.25,
+    manufacturer: "MediPharm",
+    dosage: "1 tablet twice daily"
+  },
+  {
+    id: "5",
+    name: "HeartGuard",
+    composition: "Atenolol 25mg",
+    price: 15.99,
+    manufacturer: "CardioMed",
+    dosage: "1 tablet daily"
+  },
+  {
+    id: "6",
+    name: "DigestAid",
+    composition: "Omeprazole 20mg",
+    price: 11.50,
+    manufacturer: "HealthCare Labs",
+    dosage: "1 capsule daily before breakfast"
+  },
+  {
+    id: "7",
+    name: "GenericPain",
+    composition: "Paracetamol 500mg",
+    price: 3.99,
+    manufacturer: "ValueMeds",
+    dosage: "1-2 tablets every 4-6 hours"
+  },
+  {
+    id: "8",
+    name: "BioCardia",
+    composition: "Atenolol 25mg",
+    price: 14.25,
+    manufacturer: "BioHealth",
+    dosage: "1 tablet daily in the morning"
+  }
+];
+
+interface SearchOptions {
+  query?: string;
+  filters?: FilterOptions;
+  sort?: string;
+}
 
 export const useMedicineSearch = () => {
   const [searchResults, setSearchResults] = useState<Medicine[]>([]);
-  const [allMedicines, setAllMedicines] = useState<Medicine[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allMedicines, setAllMedicines] = useState<Medicine[]>(DEMO_MEDICINES);
+  const [loading, setLoading] = useState(false);
   const [manufacturers, setManufacturers] = useState<string[]>([]);
   const [compositions, setCompositions] = useState<string[]>([]);
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
@@ -17,103 +89,97 @@ export const useMedicineSearch = () => {
     filters: {},
     sort: "name-asc"
   });
-  const [useDefaultData, setUseDefaultData] = useState(false);
-  const [focusedMedicine, setFocusedMedicine] = useState<Medicine | null>(null);
-  const [alternatives, setAlternatives] = useState<Medicine[]>([]);
-  const [dataLoadFailed, setDataLoadFailed] = useState(false);
 
-  // Initial data fetch
+  // Extract unique manufacturers and compositions
   useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      try {
-        console.log("Loading initial medicines data...");
-        const { medicines, useDefault } = await fetchAllMedicines();
-        
-        console.log(`Loaded ${medicines.length} medicines (useDefaultData: ${useDefault})`);
-        setAllMedicines(medicines);
-        setSearchResults(medicines);
-        setUseDefaultData(useDefault);
-        setDataLoadFailed(medicines.length === 0);
-        
-        if (medicines.length === 0) {
-          toast.error("Failed to load any medicines from the database. Please check your connection.");
-          return;
-        }
-        
-        // Extract unique manufacturers and compositions
-        setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
-        setCompositions(extractUniqueValues(medicines, 'composition'));
-        
-      } catch (error) {
-        console.error("Error in initial data load:", error);
-        setDataLoadFailed(true);
-        toast.error("Failed to load medicines data. Please refresh the page.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInitialData();
+    const uniqueManufacturers = Array.from(
+      new Set(DEMO_MEDICINES.map(med => med.manufacturer))
+    );
+    const uniqueCompositions = Array.from(
+      new Set(DEMO_MEDICINES.map(med => med.composition))
+    );
+    
+    setManufacturers(uniqueManufacturers);
+    setCompositions(uniqueCompositions);
   }, []);
 
   // Search and filter function
   useEffect(() => {
-    const performSearch = async () => {
-      if (dataLoadFailed) {
-        console.log("Skipping search because initial data load failed");
-        return;
-      }
-      
+    const searchMedicines = async () => {
       setLoading(true);
       try {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        let results = [...DEMO_MEDICINES];
         const { query, filters, sort } = searchOptions;
         
-        console.log(`Performing search with query: "${query || ''}", filters:`, filters, `sort: ${sort || 'none'}`);
-        
-        // Get search results
-        const results = await searchMedicines(
-          query, 
-          filters, 
-          sort, 
-          allMedicines, 
-          useDefaultData
-        );
-        
-        // Apply sorting to results
-        const sortedResults = sort ? applySorting(results, sort) : results;
-        console.log(`Found ${sortedResults.length} medicines after sorting`);
-        
-        // Set focused medicine and alternatives if there's a query
-        if (query && query.trim() !== "" && sortedResults.length > 0) {
-          setFocusedMedicine(sortedResults[0]);
-          // Find alternatives for the focused medicine
-          const medicineAlternatives = findAlternativeMedicines(sortedResults[0], allMedicines);
-          console.log(`Found ${medicineAlternatives.length} alternatives for ${sortedResults[0].name}`);
-          setAlternatives(medicineAlternatives);
-        } else {
-          setFocusedMedicine(null);
-          setAlternatives([]);
+        // Filter by search query
+        if (query && query.trim() !== "") {
+          const searchTerm = query.toLowerCase();
+          results = results.filter(
+            (med) =>
+              med.name.toLowerCase().includes(searchTerm) ||
+              med.composition.toLowerCase().includes(searchTerm) ||
+              med.manufacturer.toLowerCase().includes(searchTerm)
+          );
         }
         
-        setSearchResults(sortedResults);
-        if (sortedResults.length === 0 && (query || Object.keys(filters || {}).length > 0)) {
+        // Apply filters
+        if (filters) {
+          if (filters.composition) {
+            results = results.filter(med => med.composition === filters.composition);
+          }
+          
+          if (filters.manufacturer) {
+            results = results.filter(med => med.manufacturer === filters.manufacturer);
+          }
+          
+          if (filters.priceRange) {
+            const { min, max } = filters.priceRange;
+            if (min !== undefined) {
+              results = results.filter(med => med.price >= min);
+            }
+            if (max !== undefined) {
+              results = results.filter(med => med.price <= max);
+            }
+          }
+        }
+        
+        // Apply sorting
+        if (sort) {
+          switch (sort) {
+            case 'name-asc':
+              results.sort((a, b) => a.name.localeCompare(b.name));
+              break;
+            case 'name-desc':
+              results.sort((a, b) => b.name.localeCompare(a.name));
+              break;
+            case 'price-asc':
+              results.sort((a, b) => a.price - b.price);
+              break;
+            case 'price-desc':
+              results.sort((a, b) => b.price - a.price);
+              break;
+            default:
+              break;
+          }
+        }
+        
+        setSearchResults(results);
+        if (results.length === 0 && (query || Object.keys(filters || {}).length > 0)) {
           toast.info("No medicines found matching your criteria");
         }
       } catch (error) {
-        console.error("Error performing search:", error);
-        toast.error("An error occurred while searching");
+        console.error("Search error:", error);
+        toast.error("Error searching medicines");
       } finally {
         setLoading(false);
       }
     };
 
-    // Only search if we've loaded the initial data
-    if (allMedicines.length > 0 || searchOptions.query || 
-        (searchOptions.filters && Object.keys(searchOptions.filters).length > 0)) {
-      performSearch();
-    }
-  }, [searchOptions, allMedicines.length, useDefaultData, dataLoadFailed]);
+    searchMedicines();
+  }, [searchOptions]);
 
   const updateSearchQuery = (query: string) => {
     setSearchOptions(prev => ({ ...prev, query }));
@@ -127,47 +193,14 @@ export const useMedicineSearch = () => {
     setSearchOptions(prev => ({ ...prev, sort }));
   };
 
-  const retryFetchData = async () => {
-    setLoading(true);
-    setDataLoadFailed(false);
-    try {
-      const { medicines, useDefault } = await fetchAllMedicines();
-      setAllMedicines(medicines);
-      setSearchResults(medicines);
-      setUseDefaultData(useDefault);
-      
-      if (medicines.length === 0) {
-        setDataLoadFailed(true);
-        toast.error("Still unable to load medicines. Please check database connection.");
-      } else {
-        // Extract unique manufacturers and compositions
-        setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
-        setCompositions(extractUniqueValues(medicines, 'composition'));
-        toast.success(`Successfully loaded ${medicines.length} medicines`);
-      }
-    } catch (error) {
-      console.error("Error retrying data fetch:", error);
-      setDataLoadFailed(true);
-      toast.error("Failed to load medicines data on retry.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     medicines: searchResults,
     loading,
     manufacturers,
     compositions,
     searchOptions,
-    focusedMedicine,
-    alternatives,
-    dataLoadFailed,
     updateSearchQuery,
     updateFilters,
-    updateSort,
-    retryFetchData
+    updateSort
   };
 };
-
-export default useMedicineSearch;

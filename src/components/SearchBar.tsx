@@ -7,10 +7,7 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ 
-  onSearch, 
-  placeholder = "Search medicines by composition..." 
-}) => {
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = "Search medicines..." }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -36,7 +33,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white rounded-full border-2 border-medblue-100 focus:border-medblue-500 pl-10 pr-10 py-3 outline-none shadow-sm transition-all"
           placeholder={placeholder}
-          aria-label="Search medicines by composition"
+          aria-label="Search medicines"
         />
         {searchQuery && (
           <button 

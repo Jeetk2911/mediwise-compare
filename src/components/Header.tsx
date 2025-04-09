@@ -14,17 +14,22 @@ const Header: React.FC = () => {
             <span className="text-xl font-bold text-medcyan-500">Compare</span>
           </Link>
         </div>
-        <nav className="flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-6">
           <Link to="/" className="text-sm font-medium hover:text-medblue-600 transition-colors">
             Home
           </Link>
-          <Link to="/about" className="text-sm font-medium hover:text-medblue-600 transition-colors">
+          <Link to="#" className="text-sm font-medium hover:text-medblue-600 transition-colors">
             About
           </Link>
-          <Link to="/contact" className="text-sm font-medium hover:text-medblue-600 transition-colors">
+          <Link to="#" className="text-sm font-medium hover:text-medblue-600 transition-colors">
             Contact
           </Link>
         </nav>
+        <div className="flex items-center gap-4">
+          <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent/50 h-9 px-4 py-2">
+            Sign In
+          </button>
+        </div>
       </div>
     </header>
   );

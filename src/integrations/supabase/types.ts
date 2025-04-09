@@ -9,36 +9,7 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      medicines: {
-        Row: {
-          id: number
-          manufacturer: string | null
-          med_id: number
-          name: string
-          "price(₹)": number | null
-          short_composition1: string | null
-          short_composition2: string | null
-        }
-        Insert: {
-          id: number
-          manufacturer?: string | null
-          med_id?: number
-          name: string
-          "price(₹)"?: number | null
-          short_composition1?: string | null
-          short_composition2?: string | null
-        }
-        Update: {
-          id?: number
-          manufacturer?: string | null
-          med_id?: number
-          name?: string
-          "price(₹)"?: number | null
-          short_composition1?: string | null
-          short_composition2?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never

@@ -1,6 +1,15 @@
+
 import React, { useState } from "react";
 import { Filter, ChevronDown, ChevronUp, X } from "lucide-react";
-import { FilterOptions } from "../types/medicine";
+
+export interface FilterOptions {
+  composition?: string;
+  priceRange?: {
+    min: number;
+    max: number;
+  };
+  manufacturer?: string;
+}
 
 interface FilterBarProps {
   onFilterChange: (filters: FilterOptions) => void;
