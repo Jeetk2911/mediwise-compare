@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { Medicine } from "../types/medicine";
 import { getMedicineAvailability } from "../utils/medicineMappers";
-import { Card, CardContent } from "./ui/card";
 
 interface MedicineCardProps {
   medicine: Medicine;

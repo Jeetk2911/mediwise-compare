@@ -38,3 +38,8 @@ export const applySorting = (medicines: Medicine[], sort: string): Medicine[] =>
   
   return sortedMedicines;
 };
+
+// Helper function to format composition for search
+export const formatCompositionForSearch = (composition: string): string => {
+  return composition.toLowerCase().trim();
+};

@@ -26,8 +26,10 @@ export const useMedicineSearch = () => {
     const loadInitialData = async () => {
       setLoading(true);
       try {
+        console.log("Loading initial medicines data...");
         const { medicines, useDefaultData: useDefault } = await fetchAllMedicines();
         
+        console.log(`Loaded ${medicines.length} medicines (useDefaultData: ${useDefault})`);
         setAllMedicines(medicines);
         setSearchResults(medicines);
         
@@ -51,6 +53,8 @@ export const useMedicineSearch = () => {
       try {
         const { query, filters, sort } = searchOptions;
         
+        console.log(`Performing search with query: "${query || ''}", filters:`, filters, `sort: ${sort || 'none'}`);
+        
         // Get search results
         const results = await searchMedicines(
           query, 
@@ -62,12 +66,14 @@ export const useMedicineSearch = () => {
         
         // Apply sorting to results
         const sortedResults = sort ? applySorting(results, sort) : results;
+        console.log(`Found ${sortedResults.length} medicines after sorting`);
         
         // Set focused medicine and alternatives if there's a query
         if (query && query.trim() !== "" && sortedResults.length > 0) {
           setFocusedMedicine(sortedResults[0]);
           // Find alternatives for the focused medicine
           const medicineAlternatives = findAlternativeMedicines(sortedResults[0], allMedicines);
+          console.log(`Found ${medicineAlternatives.length} alternatives for ${sortedResults[0].name}`);
           setAlternatives(medicineAlternatives);
         } else {
           setFocusedMedicine(null);
@@ -78,6 +84,9 @@ export const useMedicineSearch = () => {
         if (sortedResults.length === 0 && (query || Object.keys(filters || {}).length > 0)) {
           toast.info("No medicines found matching your criteria");
         }
+      } catch (error) {
+        console.error("Error performing search:", error);
+        toast.error("An error occurred while searching");
       } finally {
         setLoading(false);
       }

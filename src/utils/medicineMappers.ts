@@ -4,18 +4,27 @@ import type { Database } from "../integrations/supabase/types";
 
 type SupabaseMedicine = Database['public']['Tables']['medicines']['Row'];
 
-export const mapSupabaseMedicine = (item: SupabaseMedicine): Medicine => ({
-  id: item.med_id.toString(),
-  name: item.name || 'Unknown Medicine',
-  composition: item.short_composition1 + (item.short_composition2 ? `, ${item.short_composition2}` : ''),
-  price: item['price(₹)'] || 0,
-  manufacturer: item.manufacturer || 'Unknown Manufacturer',
-  dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
-  // Added mock data for new fields
-  description: `${item.name} contains ${item.short_composition1}${item.short_composition2 ? ` and ${item.short_composition2}` : ''} and is commonly prescribed for various conditions.`,
-  sideEffects: "Common side effects may include nausea, headache, dizziness, or stomach upset. Please consult your doctor for complete information.",
-  popularity: Math.floor(Math.random() * 100), // Mock popularity score for alternatives
-});
+export const mapSupabaseMedicine = (item: SupabaseMedicine): Medicine => {
+  // Extract compositions, handle null values
+  const composition1 = item.short_composition1 || '';
+  const composition2 = item.short_composition2 || '';
+  
+  // Create formatted composition string
+  const composition = composition1 + (composition2 ? `, ${composition2}` : '');
+  
+  return {
+    id: item.med_id.toString(),
+    name: item.name || 'Unknown Medicine',
+    composition: composition,
+    price: item['price(₹)'] || 0,
+    manufacturer: item.manufacturer || 'Unknown Manufacturer',
+    dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
+    // Added mock data for new fields
+    description: `${item.name} contains ${composition1}${composition2 ? ` and ${composition2}` : ''} and is commonly prescribed for various conditions.`,
+    sideEffects: "Common side effects may include nausea, headache, dizziness, or stomach upset. Please consult your doctor for complete information.",
+    popularity: Math.floor(Math.random() * 100), // Mock popularity score for alternatives
+  };
+};
 
 export const getMedicineAvailability = (medicine: Medicine): BrandAvailability[] => {
   // This is mock data - in a real app, this would come from APIs
@@ -65,8 +74,10 @@ export const findAlternativeMedicines = (
 ): Medicine[] => {
   if (!medicine || !allMedicines.length) return [];
   
+  console.log(`Finding alternatives for: ${medicine.name} with composition: ${medicine.composition}`);
+  
   // Get the composition parts (might be multiple ingredients)
-  const compositionParts = medicine.composition.split(', ');
+  const compositionParts = medicine.composition.split(', ').map(part => part.trim().toLowerCase());
   
   // Filter medicines with any matching composition part but different from the current medicine
   const sameComposition = allMedicines.filter(m => {
@@ -74,11 +85,13 @@ export const findAlternativeMedicines = (
     if (m.id === medicine.id) return false;
     
     // Check if any part of the composition matches
-    const mCompositionParts = m.composition.split(', ');
+    const mCompositionParts = m.composition.split(', ').map(part => part.trim().toLowerCase());
     return compositionParts.some(comp => 
       mCompositionParts.some(mComp => mComp === comp)
     );
   });
+  
+  console.log(`Found ${sameComposition.length} medicines with matching composition`);
   
   // Sort by price in descending order (as specified in the Python code)
   const sortedAlternatives = sameComposition.sort((a, b) => b.price - a.price);
