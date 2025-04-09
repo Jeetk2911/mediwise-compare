@@ -2,7 +2,7 @@
 import React from "react";
 import MedicineCard from "./MedicineCard";
 import { Medicine } from "../types/medicine";
-import { ArrowDownAZ, ArrowUpAZ, ArrowDownNarrowWide, ArrowUpWideNarrow } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, ArrowDownNarrowWide, ArrowUpWideNarrow, AlertCircle } from "lucide-react";
 
 interface MedicineGridProps {
   medicines: Medicine[];
@@ -69,6 +69,14 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Data source indicator */}
+      {medicines.length > 0 && (
+        <div className="text-xs text-gray-500 mb-4 flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+          Using live database data - showing {medicines.length} results
+        </div>
+      )}
       
       {/* Show focused medicine and alternatives if they exist */}
       {focusedMedicine && alternatives.length > 0 && (

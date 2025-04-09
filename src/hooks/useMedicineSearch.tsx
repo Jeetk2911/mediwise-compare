@@ -20,6 +20,7 @@ export const useMedicineSearch = () => {
   const [useDefaultData, setUseDefaultData] = useState(false);
   const [focusedMedicine, setFocusedMedicine] = useState<Medicine | null>(null);
   const [alternatives, setAlternatives] = useState<Medicine[]>([]);
+  const [dataLoadFailed, setDataLoadFailed] = useState(false);
 
   // Initial data fetch
   useEffect(() => {
@@ -27,17 +28,27 @@ export const useMedicineSearch = () => {
       setLoading(true);
       try {
         console.log("Loading initial medicines data...");
-        const { medicines, useDefaultData: useDefault } = await fetchAllMedicines();
+        const { medicines, useDefault } = await fetchAllMedicines();
         
         console.log(`Loaded ${medicines.length} medicines (useDefaultData: ${useDefault})`);
         setAllMedicines(medicines);
         setSearchResults(medicines);
+        setUseDefaultData(useDefault);
+        setDataLoadFailed(medicines.length === 0);
+        
+        if (medicines.length === 0) {
+          toast.error("Failed to load any medicines from the database. Please check your connection.");
+          return;
+        }
         
         // Extract unique manufacturers and compositions
         setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
         setCompositions(extractUniqueValues(medicines, 'composition'));
         
-        setUseDefaultData(useDefault);
+      } catch (error) {
+        console.error("Error in initial data load:", error);
+        setDataLoadFailed(true);
+        toast.error("Failed to load medicines data. Please refresh the page.");
       } finally {
         setLoading(false);
       }
@@ -49,6 +60,11 @@ export const useMedicineSearch = () => {
   // Search and filter function
   useEffect(() => {
     const performSearch = async () => {
+      if (dataLoadFailed) {
+        console.log("Skipping search because initial data load failed");
+        return;
+      }
+      
       setLoading(true);
       try {
         const { query, filters, sort } = searchOptions;
@@ -97,7 +113,7 @@ export const useMedicineSearch = () => {
         (searchOptions.filters && Object.keys(searchOptions.filters).length > 0)) {
       performSearch();
     }
-  }, [searchOptions, allMedicines.length, useDefaultData]);
+  }, [searchOptions, allMedicines.length, useDefaultData, dataLoadFailed]);
 
   const updateSearchQuery = (query: string) => {
     setSearchOptions(prev => ({ ...prev, query }));
@@ -111,6 +127,33 @@ export const useMedicineSearch = () => {
     setSearchOptions(prev => ({ ...prev, sort }));
   };
 
+  const retryFetchData = async () => {
+    setLoading(true);
+    setDataLoadFailed(false);
+    try {
+      const { medicines, useDefault } = await fetchAllMedicines();
+      setAllMedicines(medicines);
+      setSearchResults(medicines);
+      setUseDefaultData(useDefault);
+      
+      if (medicines.length === 0) {
+        setDataLoadFailed(true);
+        toast.error("Still unable to load medicines. Please check database connection.");
+      } else {
+        // Extract unique manufacturers and compositions
+        setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
+        setCompositions(extractUniqueValues(medicines, 'composition'));
+        toast.success(`Successfully loaded ${medicines.length} medicines`);
+      }
+    } catch (error) {
+      console.error("Error retrying data fetch:", error);
+      setDataLoadFailed(true);
+      toast.error("Failed to load medicines data on retry.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     medicines: searchResults,
     loading,
@@ -119,9 +162,11 @@ export const useMedicineSearch = () => {
     searchOptions,
     focusedMedicine,
     alternatives,
+    dataLoadFailed,
     updateSearchQuery,
     updateFilters,
-    updateSort
+    updateSort,
+    retryFetchData
   };
 };
 

@@ -1,4 +1,3 @@
-
 import { Medicine, BrandAvailability } from "../types/medicine";
 import type { Database } from "../integrations/supabase/types";
 
@@ -12,15 +11,18 @@ export const mapSupabaseMedicine = (item: SupabaseMedicine): Medicine => {
   // Create formatted composition string
   const composition = composition1 + (composition2 ? `, ${composition2}` : '');
   
+  // Log mapping for debugging
+  console.log(`Mapping medicine ${item.name || 'unknown'} with ID: ${item.med_id}`);
+  
   return {
     id: item.med_id.toString(),
     name: item.name || 'Unknown Medicine',
-    composition: composition,
+    composition: composition || 'Composition not available',
     price: item['price(₹)'] || 0,
     manufacturer: item.manufacturer || 'Unknown Manufacturer',
     dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
     // Added mock data for new fields
-    description: `${item.name} contains ${composition1}${composition2 ? ` and ${composition2}` : ''} and is commonly prescribed for various conditions.`,
+    description: `${item.name || 'This medicine'} contains ${composition || 'active ingredients'} and is commonly prescribed for various conditions.`,
     sideEffects: "Common side effects may include nausea, headache, dizziness, or stomach upset. Please consult your doctor for complete information.",
     popularity: Math.floor(Math.random() * 100), // Mock popularity score for alternatives
   };

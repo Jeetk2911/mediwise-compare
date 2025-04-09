@@ -15,7 +15,7 @@ export const fetchAllMedicines = async (): Promise<{
     const { data, error } = await supabase
       .from('medicines')
       .select('*')
-      .limit(1000);
+      .limit(100); // Start with a smaller batch for initial load
     
     if (error) {
       console.error("Supabase error:", error);
@@ -31,7 +31,7 @@ export const fetchAllMedicines = async (): Promise<{
       };
     } else {
       console.log("No medicines found in Supabase, using sample data");
-      toast.info("Using sample data for demonstration. No medicines found in database.");
+      toast.error("Failed to load medicines from database. Please check your connection.");
       return {
         medicines: sampleMedicines,
         useDefaultData: true
@@ -39,7 +39,7 @@ export const fetchAllMedicines = async (): Promise<{
     }
   } catch (error) {
     console.error("Error fetching medicines:", error);
-    toast.error("Failed to load medicines from database. Using sample data.");
+    toast.error("Failed to load medicines from database. Please check your database connection.");
     return {
       medicines: sampleMedicines,
       useDefaultData: true
@@ -111,7 +111,7 @@ export const searchMedicines = async (
       
       // Search using ILIKE on both composition fields for partial matches
       supabaseQuery = supabaseQuery.or(
-        `short_composition1.ilike.%${searchTerm}%,short_composition2.ilike.%${searchTerm}%`
+        `short_composition1.ilike.%${searchTerm}%,short_composition2.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`
       );
     }
     
@@ -147,12 +147,27 @@ export const searchMedicines = async (
     console.log(`Supabase returned ${data?.length || 0} medicines`);
     
     if (!data || data.length === 0) {
-      // Use sample data instead if no results from database
-      console.log("No results from Supabase, falling back to sample data");
-      if (query || (filters && Object.keys(filters).length > 0)) {
-        toast.info("Using sample data. No medicines found in database matching your criteria.");
+      // Fall back to fetching some data without filters
+      console.log("No results with filters, trying to get any medicines");
+      const { data: anyData, error: anyError } = await supabase
+        .from('medicines')
+        .select('*')
+        .limit(100);
+        
+      if (anyError) {
+        console.error("Supabase fallback query error:", anyError);
+        toast.warning("Could not retrieve medicines with your criteria.");
+        return [];
       }
-      return sampleMedicines;
+      
+      if (!anyData || anyData.length === 0) {
+        console.log("Still no data from Supabase, database might be empty");
+        toast.error("Database appears to be empty. Please check your database configuration.");
+        return [];
+      }
+      
+      // We got some data, map it
+      return anyData.map(mapSupabaseMedicine);
     }
     
     // Map the data to our Medicine type
@@ -167,9 +182,9 @@ export const searchMedicines = async (
     return results;
   } catch (error) {
     console.error("Search error:", error);
-    toast.error("Error searching medicines");
+    toast.error("Error searching medicines: " + (error instanceof Error ? error.message : String(error)));
     
-    // Fallback to sample data
-    return sampleMedicines;
+    // Return empty array instead of sample data on error
+    return [];
   }
 };

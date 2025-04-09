@@ -10,6 +10,7 @@ import { SkeletonGrid } from "../components/Skeletons";
 import { useMedicineSearch } from "../hooks/useMedicineSearch";
 import { Medicine } from "../types/medicine";
 import { toast } from "sonner";
+import { RefreshCw } from "lucide-react";
 
 const Index = () => {
   const {
@@ -20,9 +21,11 @@ const Index = () => {
     searchOptions,
     focusedMedicine,
     alternatives,
+    dataLoadFailed,
     updateSearchQuery,
     updateFilters,
-    updateSort
+    updateSort,
+    retryFetchData
   } = useMedicineSearch();
 
   // State for medicine comparison
@@ -110,6 +113,23 @@ const Index = () => {
               className="bg-medblue-600 text-white rounded-full px-4 py-3 shadow-lg flex items-center gap-2 hover:bg-medblue-700 transition-colors"
             >
               Compare Medicines ({comparedMedicines.length})
+            </button>
+          </div>
+        )}
+        
+        {/* Data load failed message with retry button */}
+        {dataLoadFailed && !loading && (
+          <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg text-center">
+            <h3 className="text-xl font-semibold text-red-700 mb-2">Failed to load medicines data</h3>
+            <p className="mb-4 text-red-600">
+              We couldn't connect to the database to fetch medicines. Please check your connection and try again.
+            </p>
+            <button
+              onClick={retryFetchData}
+              className="bg-medblue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 mx-auto hover:bg-medblue-700 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry Loading Data
             </button>
           </div>
         )}
