@@ -1,3 +1,4 @@
+
 import { Medicine, BrandAvailability } from "../types/medicine";
 import type { Database } from "../integrations/supabase/types";
 
@@ -11,11 +12,15 @@ export const mapSupabaseMedicine = (item: SupabaseMedicine): Medicine => {
   // Create formatted composition string
   const composition = composition1 + (composition2 ? `, ${composition2}` : '');
   
+  // Handle numeric fields that might be null
+  const price = item['price(₹)'] || 0;
+  const medId = item.med_id?.toString() || item.id?.toString() || 'unknown';
+  
   return {
-    id: item.med_id.toString(),
+    id: medId,
     name: item.name || 'Unknown Medicine',
-    composition: composition,
-    price: item['price(₹)'] || 0,
+    composition: composition.trim() || 'Composition not available',
+    price: price,
     manufacturer: item.manufacturer || 'Unknown Manufacturer',
     dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
     description: `${item.name} contains ${composition1}${composition2 ? ` and ${composition2}` : ''} and is commonly prescribed for various conditions.`,
@@ -65,7 +70,7 @@ export const getMedicineAvailability = (medicine: Medicine): BrandAvailability[]
   ];
 };
 
-// Updated function to find alternative medicines based on the Python algorithm
+// Updated function to find alternative medicines based on composition matching
 export const findAlternativeMedicines = (
   medicine: Medicine,
   allMedicines: Medicine[]

@@ -21,6 +21,7 @@ export const useMedicineSearch = () => {
   const [focusedMedicine, setFocusedMedicine] = useState<Medicine | null>(null);
   const [alternatives, setAlternatives] = useState<Medicine[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
 
   // Initial data fetch
   useEffect(() => {
@@ -28,12 +29,12 @@ export const useMedicineSearch = () => {
       setLoading(true);
       setErrorMessage(null);
       try {
-        console.log("Loading initial medicines data...");
+        console.log(`Attempting to fetch medicines data (attempt ${connectionAttempts + 1})...`);
         const { medicines, useDefaultData } = await fetchAllMedicines();
         
         console.log(`Loaded ${medicines.length} medicines (useDefaultData: ${useDefaultData})`);
         setAllMedicines(medicines);
-        setSearchResults(medicines);
+        setSearchResults(medicines.slice(0, 50)); // Show first 50 medicines initially
         
         // Extract unique manufacturers and compositions
         setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
@@ -43,17 +44,20 @@ export const useMedicineSearch = () => {
         
         if (medicines.length === 0) {
           setErrorMessage("No medicines found in the database. Please check your connection.");
+        } else if (useDefaultData) {
+          setErrorMessage("Using sample data. Could not connect to the database.");
         }
       } catch (error) {
         console.error("Error loading initial data:", error);
         setErrorMessage("Failed to load medicine data. Please try again later.");
+        setUseDefaultData(true);
       } finally {
         setLoading(false);
       }
     };
 
     loadInitialData();
-  }, []);
+  }, [connectionAttempts]);
 
   // Search and filter function
   useEffect(() => {
@@ -113,27 +117,11 @@ export const useMedicineSearch = () => {
     setErrorMessage(null);
     try {
       toast.info("Attempting to reconnect to database...");
-      const { medicines, useDefaultData } = await fetchAllMedicines();
-      
-      setAllMedicines(medicines);
-      setSearchResults(medicines);
-      
-      // Extract unique manufacturers and compositions
-      setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
-      setCompositions(extractUniqueValues(medicines, 'composition'));
-      
-      setUseDefaultData(useDefaultData);
-      
-      if (!useDefaultData) {
-        toast.success("Successfully connected to the database!");
-      } else {
-        setErrorMessage("Still using sample data. Check your database connection.");
-      }
+      setConnectionAttempts(prev => prev + 1);
     } catch (error) {
       console.error("Error retrying connection:", error);
       setErrorMessage("Failed to connect to the database. Please try again later.");
       toast.error("Connection failed. Using sample data.");
-    } finally {
       setLoading(false);
     }
   };
@@ -163,7 +151,8 @@ export const useMedicineSearch = () => {
     updateSearchQuery,
     updateFilters,
     updateSort,
-    retryConnection
+    retryConnection,
+    totalMedicines: allMedicines.length
   };
 };
 

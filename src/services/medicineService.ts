@@ -11,30 +11,31 @@ export const fetchAllMedicines = async (): Promise<{
   useDefaultData: boolean;
 }> => {
   try {
-    console.log("Fetching medicines from Supabase...");
+    console.log("Attempting to connect to Supabase database...");
     
-    // Try to fetch a single record first to test connection
+    // First, test the connection with a small query
     const { data: testData, error: testError } = await supabase
       .from('medicines')
-      .select('*')
+      .select('med_id')
       .limit(1);
     
     if (testError) {
-      console.error("Supabase connection error:", testError);
-      throw testError;
+      console.error("Connection test failed:", testError);
+      throw new Error(`Database connection failed: ${testError.message}`);
     }
     
     console.log("Connection test successful, fetching medicines data");
     
-    // Now fetch actual data with a higher limit
+    // Now fetch the actual data with pagination to handle large datasets
+    // Increase limit to get more data
     const { data, error } = await supabase
       .from('medicines')
       .select('*')
-      .limit(100); // Increased limit to get more data
+      .limit(500); // Increased limit to get more data
     
     if (error) {
-      console.error("Supabase data fetch error:", error);
-      throw error;
+      console.error("Data fetch error:", error);
+      throw new Error(`Failed to retrieve medicines: ${error.message}`);
     }
     
     if (data && data.length > 0) {
@@ -45,8 +46,8 @@ export const fetchAllMedicines = async (): Promise<{
         useDefaultData: false
       };
     } else {
-      console.log("No medicines found in Supabase, using sample data");
-      toast.info("Using sample data for demonstration. No medicines found in database.");
+      console.log("No medicines found in database, using sample data");
+      toast.info("No medicines found in database. Using sample data for demonstration.");
       return {
         medicines: sampleMedicines,
         useDefaultData: true
@@ -54,7 +55,7 @@ export const fetchAllMedicines = async (): Promise<{
     }
   } catch (error) {
     console.error("Error fetching medicines:", error);
-    toast.error("Failed to load medicines from database. Using sample data.");
+    toast.error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return {
       medicines: sampleMedicines,
       useDefaultData: true
@@ -75,16 +76,17 @@ export const searchMedicines = async (
       console.log("Using default data for search");
       let results = [...sampleMedicines];
       
-      // Apply text search if query exists - focusing on composition
+      // Apply text search if query exists
       if (query && query.trim() !== "") {
         const searchTerm = formatCompositionForSearch(query);
         results = results.filter(med => 
-          formatCompositionForSearch(med.composition).includes(searchTerm)
+          formatCompositionForSearch(med.composition).includes(searchTerm) ||
+          med.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        console.log(`Filtered to ${results.length} medicines by composition search term: ${searchTerm}`);
+        console.log(`Filtered to ${results.length} medicines by search term: ${searchTerm}`);
       }
       
-      // Apply filters if they exist
+      // Apply filters
       if (filters) {
         // For composition filter
         if (filters.composition) {
@@ -119,18 +121,18 @@ export const searchMedicines = async (
     // Start building the Supabase query for live data
     let supabaseQuery = supabase.from('medicines').select('*');
     
-    // Apply text search if query exists - FOCUSING ON COMPOSITION AND NAME
+    // Apply text search if query exists - SEARCH IN BOTH COMPOSITION AND NAME
     if (query && query.trim() !== "") {
       const searchTerm = query.toLowerCase().trim();
       console.log(`Searching with term: ${searchTerm}`);
       
-      // Search using ILIKE on composition fields and name for partial matches
+      // Use OR conditions to search across multiple columns
       supabaseQuery = supabaseQuery.or(
         `short_composition1.ilike.%${searchTerm}%,short_composition2.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`
       );
     }
     
-    // Apply filters if they exist
+    // Apply filters
     if (filters) {
       console.log("Applying filters:", filters);
       
@@ -153,8 +155,8 @@ export const searchMedicines = async (
     
     console.log("Executing Supabase query...");
     
-    // Execute the query with a higher limit to ensure we get enough data
-    let { data, error } = await supabaseQuery.limit(100);
+    // Execute the query with a higher limit
+    let { data, error } = await supabaseQuery.limit(500); // Increased limit substantially
     
     if (error) {
       console.error("Supabase search error:", error);
@@ -164,11 +166,7 @@ export const searchMedicines = async (
     console.log(`Supabase returned ${data?.length || 0} medicines`);
     
     if (!data || data.length === 0) {
-      // Use sample data instead if no results from database
-      console.log("No results from Supabase, falling back to sample data");
-      if (query || (filters && Object.keys(filters).length > 0)) {
-        toast.info("No medicines found in database matching your criteria.");
-      }
+      console.log("No results from Supabase search");
       return [];
     }
     
@@ -184,7 +182,12 @@ export const searchMedicines = async (
     return results;
   } catch (error) {
     console.error("Search error:", error);
-    toast.error("Error searching medicines");
+    toast.error("Error searching medicines. Using sample data instead.");
+    
+    // On error, if we have a query or filters, search locally in sample data
+    if (query || (filters && Object.keys(filters).length > 0)) {
+      return searchMedicines(query, filters, sort, sampleMedicines, true);
+    }
     
     // Fallback to empty array
     return [];
