@@ -10,6 +10,7 @@ import { SkeletonGrid } from "../components/Skeletons";
 import { useMedicineSearch } from "../hooks/useMedicineSearch";
 import { Medicine } from "../types/medicine";
 import { toast } from "sonner";
+import { AlertCircle, Database, RefreshCw } from "lucide-react";
 
 const Index = () => {
   const {
@@ -20,9 +21,12 @@ const Index = () => {
     searchOptions,
     focusedMedicine,
     alternatives,
+    errorMessage,
+    useDefaultData,
     updateSearchQuery,
     updateFilters,
-    updateSort
+    updateSort,
+    retryConnection
   } = useMedicineSearch();
 
   // State for medicine comparison
@@ -87,11 +91,48 @@ const Index = () => {
             easily compare alternatives to find the best option for your needs.
           </p>
           
+          {/* Data Source Indicator */}
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium mb-6 ${
+            useDefaultData 
+              ? "bg-amber-100 text-amber-700 border border-amber-300" 
+              : "bg-green-100 text-green-700 border border-green-300"
+          }`}>
+            <Database className="h-4 w-4" />
+            {useDefaultData 
+              ? "Using Sample Data" 
+              : "Using Live Database"}
+            
+            {useDefaultData && (
+              <button 
+                onClick={retryConnection} 
+                className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800"
+                title="Retry database connection"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span className="ml-1">Retry</span>
+              </button>
+            )}
+          </div>
+          
           <SearchBar 
             onSearch={updateSearchQuery} 
             placeholder="Search by medicine composition..." 
           />
         </section>
+        
+        {errorMessage && (
+          <div className="mb-8 p-4 border border-amber-200 bg-amber-50 rounded-md flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <p className="text-amber-700">{errorMessage}</p>
+            <button 
+              onClick={retryConnection}
+              className="ml-auto px-3 py-1 bg-amber-200 text-amber-700 rounded hover:bg-amber-300 transition-colors flex items-center gap-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Retry Connection</span>
+            </button>
+          </div>
+        )}
         
         <section className="mb-8">
           <FilterBar 
@@ -126,9 +167,10 @@ const Index = () => {
               currentSort={searchOptions.sort}
               onCompare={handleCompare}
               comparedMedicines={comparedMedicines}
+              usingLiveData={!useDefaultData}
             />
           ) : (
-            <NoResults />
+            <NoResults onRetry={retryConnection} usingDefaultData={useDefaultData} />
           )}
         </section>
       </main>

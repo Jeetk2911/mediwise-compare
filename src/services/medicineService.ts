@@ -12,13 +12,28 @@ export const fetchAllMedicines = async (): Promise<{
 }> => {
   try {
     console.log("Fetching medicines from Supabase...");
+    
+    // Try to fetch a single record first to test connection
+    const { data: testData, error: testError } = await supabase
+      .from('medicines')
+      .select('*')
+      .limit(1);
+    
+    if (testError) {
+      console.error("Supabase connection error:", testError);
+      throw testError;
+    }
+    
+    console.log("Connection test successful, fetching medicines data");
+    
+    // Now fetch actual data with a higher limit
     const { data, error } = await supabase
       .from('medicines')
       .select('*')
-      .limit(1000);
+      .limit(100); // Increased limit to get more data
     
     if (error) {
-      console.error("Supabase error:", error);
+      console.error("Supabase data fetch error:", error);
       throw error;
     }
     
@@ -104,14 +119,14 @@ export const searchMedicines = async (
     // Start building the Supabase query for live data
     let supabaseQuery = supabase.from('medicines').select('*');
     
-    // Apply text search if query exists - FOCUSING ON COMPOSITION
+    // Apply text search if query exists - FOCUSING ON COMPOSITION AND NAME
     if (query && query.trim() !== "") {
       const searchTerm = query.toLowerCase().trim();
-      console.log(`Searching for compositions with term: ${searchTerm}`);
+      console.log(`Searching with term: ${searchTerm}`);
       
-      // Search using ILIKE on both composition fields for partial matches
+      // Search using ILIKE on composition fields and name for partial matches
       supabaseQuery = supabaseQuery.or(
-        `short_composition1.ilike.%${searchTerm}%,short_composition2.ilike.%${searchTerm}%`
+        `short_composition1.ilike.%${searchTerm}%,short_composition2.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`
       );
     }
     
@@ -136,8 +151,10 @@ export const searchMedicines = async (
       }
     }
     
+    console.log("Executing Supabase query...");
+    
     // Execute the query with a higher limit to ensure we get enough data
-    let { data, error } = await supabaseQuery.limit(500);
+    let { data, error } = await supabaseQuery.limit(100);
     
     if (error) {
       console.error("Supabase search error:", error);
@@ -150,9 +167,9 @@ export const searchMedicines = async (
       // Use sample data instead if no results from database
       console.log("No results from Supabase, falling back to sample data");
       if (query || (filters && Object.keys(filters).length > 0)) {
-        toast.info("Using sample data. No medicines found in database matching your criteria.");
+        toast.info("No medicines found in database matching your criteria.");
       }
-      return sampleMedicines;
+      return [];
     }
     
     // Map the data to our Medicine type
@@ -169,7 +186,7 @@ export const searchMedicines = async (
     console.error("Search error:", error);
     toast.error("Error searching medicines");
     
-    // Fallback to sample data
-    return sampleMedicines;
+    // Fallback to empty array
+    return [];
   }
 };

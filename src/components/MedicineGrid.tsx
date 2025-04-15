@@ -2,7 +2,7 @@
 import React from "react";
 import MedicineCard from "./MedicineCard";
 import { Medicine } from "../types/medicine";
-import { ArrowDownAZ, ArrowUpAZ, ArrowDownNarrowWide, ArrowUpWideNarrow } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, ArrowDownNarrowWide, ArrowUpWideNarrow, Database } from "lucide-react";
 
 interface MedicineGridProps {
   medicines: Medicine[];
@@ -13,6 +13,7 @@ interface MedicineGridProps {
   currentSort?: string;
   onCompare: (medicine: Medicine) => void;
   comparedMedicines: Medicine[];
+  usingLiveData?: boolean;
 }
 
 const MedicineGrid: React.FC<MedicineGridProps> = ({ 
@@ -23,7 +24,8 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
   onSort,
   currentSort = '',
   onCompare,
-  comparedMedicines = []
+  comparedMedicines = [],
+  usingLiveData = false
 }) => {
   const sortOptions = [
     { id: 'name-asc', label: 'Name A-Z', icon: <ArrowDownAZ className="h-4 w-4" /> },
@@ -44,9 +46,18 @@ const MedicineGrid: React.FC<MedicineGridProps> = ({
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">
-          {loading ? 'Searching...' : resultsText}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold">
+            {loading ? 'Searching...' : resultsText}
+          </h2>
+          
+          {usingLiveData && (
+            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">
+              <Database className="h-3 w-3" />
+              Live Data
+            </span>
+          )}
+        </div>
         <div className="flex gap-2">
           <label className="text-sm font-medium mr-2 hidden sm:inline-block">Sort by:</label>
           <div className="flex flex-wrap gap-1">

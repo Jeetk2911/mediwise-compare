@@ -1,4 +1,3 @@
-
 import { Medicine, BrandAvailability } from "../types/medicine";
 import type { Database } from "../integrations/supabase/types";
 
@@ -19,7 +18,6 @@ export const mapSupabaseMedicine = (item: SupabaseMedicine): Medicine => {
     price: item['price(₹)'] || 0,
     manufacturer: item.manufacturer || 'Unknown Manufacturer',
     dosage: "As directed by physician", // Default dosage as it's not in the Supabase schema
-    // Added mock data for new fields
     description: `${item.name} contains ${composition1}${composition2 ? ` and ${composition2}` : ''} and is commonly prescribed for various conditions.`,
     sideEffects: "Common side effects may include nausea, headache, dizziness, or stomach upset. Please consult your doctor for complete information.",
     popularity: Math.floor(Math.random() * 100), // Mock popularity score for alternatives

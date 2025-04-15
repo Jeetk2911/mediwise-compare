@@ -20,16 +20,18 @@ export const useMedicineSearch = () => {
   const [useDefaultData, setUseDefaultData] = useState(false);
   const [focusedMedicine, setFocusedMedicine] = useState<Medicine | null>(null);
   const [alternatives, setAlternatives] = useState<Medicine[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Initial data fetch
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
+      setErrorMessage(null);
       try {
         console.log("Loading initial medicines data...");
-        const { medicines, useDefaultData: useDefault } = await fetchAllMedicines();
+        const { medicines, useDefaultData } = await fetchAllMedicines();
         
-        console.log(`Loaded ${medicines.length} medicines (useDefaultData: ${useDefault})`);
+        console.log(`Loaded ${medicines.length} medicines (useDefaultData: ${useDefaultData})`);
         setAllMedicines(medicines);
         setSearchResults(medicines);
         
@@ -37,7 +39,14 @@ export const useMedicineSearch = () => {
         setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
         setCompositions(extractUniqueValues(medicines, 'composition'));
         
-        setUseDefaultData(useDefault);
+        setUseDefaultData(useDefaultData);
+        
+        if (medicines.length === 0) {
+          setErrorMessage("No medicines found in the database. Please check your connection.");
+        }
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+        setErrorMessage("Failed to load medicine data. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -99,6 +108,36 @@ export const useMedicineSearch = () => {
     }
   }, [searchOptions, allMedicines.length, useDefaultData]);
 
+  const retryConnection = async () => {
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      toast.info("Attempting to reconnect to database...");
+      const { medicines, useDefaultData } = await fetchAllMedicines();
+      
+      setAllMedicines(medicines);
+      setSearchResults(medicines);
+      
+      // Extract unique manufacturers and compositions
+      setManufacturers(extractUniqueValues(medicines, 'manufacturer'));
+      setCompositions(extractUniqueValues(medicines, 'composition'));
+      
+      setUseDefaultData(useDefaultData);
+      
+      if (!useDefaultData) {
+        toast.success("Successfully connected to the database!");
+      } else {
+        setErrorMessage("Still using sample data. Check your database connection.");
+      }
+    } catch (error) {
+      console.error("Error retrying connection:", error);
+      setErrorMessage("Failed to connect to the database. Please try again later.");
+      toast.error("Connection failed. Using sample data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const updateSearchQuery = (query: string) => {
     setSearchOptions(prev => ({ ...prev, query }));
   };
@@ -119,9 +158,12 @@ export const useMedicineSearch = () => {
     searchOptions,
     focusedMedicine,
     alternatives,
+    errorMessage,
+    useDefaultData,
     updateSearchQuery,
     updateFilters,
-    updateSort
+    updateSort,
+    retryConnection
   };
 };
 
